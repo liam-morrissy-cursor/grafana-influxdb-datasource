@@ -5,6 +5,7 @@ import { mockInfluxSQLVariableFetchResponse } from '../mocks/response';
 
 import { FlightSQLDatasource } from './datasource.flightsql';
 
+mockInfluxSQLVariableFetchResponse.data.results.metricFindQuery.frames[0].data.values[0].push('sensor.light');
 mockBackendService(mockInfluxSQLVariableFetchResponse);
 describe('flightsql datasource', () => {
   const templateSrv: TemplateSrv = {
@@ -46,5 +47,11 @@ describe('flightsql datasource', () => {
   it('should add template variables to the responses', async () => {
     const fields = await ds.fetchFields({ dataset: 'test', table: 'table' });
     expect(fields[0].name).toBe('$templateVar');
+  });
+
+  it('should return dotted table names without SQL quoting', async () => {
+    const tables = await ds.fetchTables('iox');
+    expect(tables).toContain('sensor.light');
+    expect(tables).not.toContain('"sensor.light"');
   });
 });
