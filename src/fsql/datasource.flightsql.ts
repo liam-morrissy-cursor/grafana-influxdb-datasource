@@ -48,7 +48,7 @@ export class FlightSQLDatasource extends SqlDatasource {
   async fetchTables(dataset?: string): Promise<string[]> {
     const query = buildTableQuery(dataset);
     const tables = await this.runSql<string[]>(query, { refId: 'tables' });
-    const tableNames = tables.map((t) => quoteIdentifierIfNecessary(t[0]));
+    const tableNames = tables.map((t) => t[0]);
     tableNames.unshift(...this.getTemplateVariables());
     return tableNames;
   }
@@ -63,7 +63,7 @@ export class FlightSQLDatasource extends SqlDatasource {
     const fields = frame.map((f) => ({
       name: f[0],
       text: f[0],
-      value: quoteIdentifierIfNecessary(f[0]),
+      value: f[0],
       type: f[1],
       label: f[0],
     }));
@@ -71,7 +71,7 @@ export class FlightSQLDatasource extends SqlDatasource {
       ...this.getTemplateVariables().map((v) => ({
         name: v,
         text: v,
-        value: quoteIdentifierIfNecessary(v),
+        value: v,
         type: '',
         label: v,
       }))
@@ -87,17 +87,29 @@ export class FlightSQLDatasource extends SqlDatasource {
     const defaultDB = this.instanceSettings.jsonData.database;
     if (!identifier?.schema && defaultDB) {
       const tables = await this.fetchTables(defaultDB);
-      return tables.map((t) => ({ name: t, completion: `${defaultDB}.${t}`, kind: CompletionItemKind.Class }));
+      return tables.map((t) => ({
+        name: t,
+        completion: `${quoteIdentifierIfNecessary(defaultDB)}.${quoteIdentifierIfNecessary(t)}`,
+        kind: CompletionItemKind.Class,
+      }));
     } else if (!identifier?.schema && !defaultDB) {
       const datasets = await this.fetchDatasets();
       return datasets.map((d) => ({ name: d, completion: `${d}.`, kind: CompletionItemKind.Module }));
     } else {
       if (!identifier?.table && (!defaultDB || identifier?.schema)) {
         const tables = await this.fetchTables(identifier?.schema);
-        return tables.map((t) => ({ name: t, completion: t, kind: CompletionItemKind.Class }));
+        return tables.map((t) => ({
+          name: t,
+          completion: quoteIdentifierIfNecessary(t),
+          kind: CompletionItemKind.Class,
+        }));
       } else if (identifier?.table && identifier.schema) {
         const fields = await this.fetchFields({ dataset: identifier.schema, table: identifier.table });
-        return fields.map((t) => ({ name: t.name, completion: t.value, kind: CompletionItemKind.Field }));
+        return fields.map((t) => ({
+          name: t.name,
+          completion: quoteIdentifierIfNecessary(t.value),
+          kind: CompletionItemKind.Field,
+        }));
       } else {
         return [];
       }

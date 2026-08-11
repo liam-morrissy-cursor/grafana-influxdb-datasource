@@ -15,20 +15,16 @@ export function buildColumnQuery(table: string, dbName?: string) {
 }
 
 function buildTableConstraint(table: string, dbName?: string) {
-  let query = '';
-
-  // check for schema qualified table
-  if (table.includes('.')) {
-    const parts = table.split('.');
-    query = 'table_schema = ' + quoteIdentAsLiteral(parts[0]);
-    query += ' AND table_name = ' + quoteIdentAsLiteral(parts[1]);
-    return query;
-  } else {
-    const database = dbName !== undefined ? quoteIdentAsLiteral(dbName) : 'database()';
-    query = `table_schema = ${database} AND table_name = ` + quoteIdentAsLiteral(table);
-
-    return query;
+  if (dbName !== undefined) {
+    return `table_schema = ${quoteIdentAsLiteral(dbName)} AND table_name = ${quoteIdentAsLiteral(table)}`;
   }
+
+  if (table.includes('.')) {
+    const [schema, ...tableParts] = table.split('.');
+    return `table_schema = ${quoteIdentAsLiteral(schema)} AND table_name = ${quoteIdentAsLiteral(tableParts.join('.'))}`;
+  }
+
+  return `table_schema = database() AND table_name = ${quoteIdentAsLiteral(table)}`;
 }
 
 function quoteIdentAsLiteral(value: string) {
