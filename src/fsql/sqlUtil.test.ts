@@ -103,4 +103,29 @@ describe('toRawSql', () => {
     const result = toRawSql(testQuery);
     expect(result).toEqual(expected);
   });
+
+  it('should quote special-character identifiers', () => {
+    const testQuery: SQLQuery = {
+      refId: 'A',
+      sql: {
+        columns: [
+          {
+            parameters: [
+              {
+                name: 'field/name',
+                type: QueryEditorExpressionType.FunctionParameter,
+              },
+            ],
+            type: QueryEditorExpressionType.Function,
+          },
+        ],
+      },
+      dataset: 'iox',
+      table: 'sensor.light',
+    };
+
+    expect(toRawSql(testQuery)).toBe(
+      'SELECT "field/name" FROM "sensor.light" WHERE "time" >= $__timeFrom AND "time" <= $__timeTo '
+    );
+  });
 });
